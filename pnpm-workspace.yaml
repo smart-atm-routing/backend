@@ -1,0 +1,15 @@
+# pnpm 11 reads the build-script allowlist here (no longer package.json).
+# Allow native postinstall builds for trusted deps only.
+allowBuilds:
+  '@prisma/client': true
+  '@prisma/engines': true
+  prisma: true
+  unrs-resolver: true
+  # esbuild downloads its platform binary; required by Orval's config loader.
+  esbuild: true
+  # Optional native msgpack accelerator for BullMQ; JS fallback is fine.
+  msgpackr-extract: false
+  # Install-time analytics phone-home; keep disabled.
+  '@scarf/scarf': false
+  # Chromium download for mermaid-cli; not needed — ERD outputs Markdown.
+  puppeteer: false
