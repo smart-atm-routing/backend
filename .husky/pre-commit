@@ -1,0 +1,6 @@
+# Put the project's Node 22 (from nvm) on PATH even when the hook runs from a
+# GUI/editor that didn't `nvm use`. POSIX-sh safe (no nvm.sh sourcing).
+NODE22="$(ls -d "$HOME"/.nvm/versions/node/v22* 2>/dev/null | sort -V | tail -1)"
+[ -n "$NODE22" ] && PATH="$NODE22/bin:$PATH"
+
+pnpm exec lint-staged

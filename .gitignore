@@ -102,3 +102,10 @@ docker-compose.override.yml
 # Misc
 # =========================
 *.pem
+
+# =========================
+# Generated artifacts (OpenAPI spec + Orval client + Prisma ERD)
+# =========================
+openapi.json
+generated/
+prisma/ERD.md

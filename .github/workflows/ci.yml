@@ -2,40 +2,88 @@ name: Backend CI
 
 on:
   push:
-    branches: [ develop ]
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
 
 jobs:
-  build-and-test:
+  lint-build-test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: salesbox
+          POSTGRES_PASSWORD: salesbox
+          POSTGRES_DB: salesbox
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U salesbox -d salesbox"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      HUSKY: 0
+      DATABASE_URL: postgresql://salesbox:salesbox@localhost:5432/salesbox?schema=public
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      COOKIE_SECRET: ci-cookie-secret-0123456789abcdef
+
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        # No version here: pnpm/action-setup reads it from the
+        # "packageManager" field in package.json (pnpm@11.9.0).
+        uses: pnpm/action-setup@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 22
+          cache: pnpm
 
-      - name: Install, Lint, Build
-        run: |
-          npm ci
-          
-          echo "Running lint check..."
-          npm run lint --if-present
-            
-          echo "Running build check..."
-          npm run build --if-present
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Generate Prisma client
+        run: pnpm exec prisma generate
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+      - name: Lint
+        run: pnpm exec eslint "src/**/*.ts" "test/**/*.ts"
+
+      - name: Build
+        run: pnpm build
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: E2E tests
+        run: pnpm test:e2e
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build production image (no push)
+        uses: docker/build-push-action@v6
         with:
           context: .
-          push: true
-          tags: mnagy156/atm-backend:latest
+          target: runtime
+          push: false
+          tags: salesbox-backend:ci

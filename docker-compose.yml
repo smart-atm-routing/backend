@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: salesbox-postgres
+    environment:
+      POSTGRES_USER: salesbox
+      POSTGRES_PASSWORD: salesbox
+      POSTGRES_DB: salesbox
+    ports:
+      # Host 5433 -> container 5432 (host 5432 is often taken by a local Postgres).
+      - '5433:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U salesbox -d salesbox']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: salesbox-redis
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      target: runtime
+    container_name: salesbox-backend
+    env_file:
+      - .env
+    environment:
+      # The image is a production build (dev-only pino-pretty is pruned out).
+      NODE_ENV: production
+      # Inside the compose network, reach services by their service name.
+      DATABASE_URL: postgresql://salesbox:salesbox@postgres:5432/salesbox?schema=public
+      REDIS_HOST: redis
+    ports:
+      - '3000:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:

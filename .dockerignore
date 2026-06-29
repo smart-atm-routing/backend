@@ -1,0 +1,17 @@
+node_modules
+dist
+coverage
+.git
+.github
+.husky
+.vscode
+.env
+.env.*
+!.env.example
+npm-debug.log
+Dockerfile
+.dockerignore
+docker-compose*.yml
+*.md
+openapi.json
+generated
