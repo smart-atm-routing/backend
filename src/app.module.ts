@@ -76,7 +76,6 @@ const isProd = process.env.NODE_ENV === 'production';
     QueueModule,
     HealthModule,
     EmailsModule,
-    UsersModule,
   ],
   providers: [
     // Apply rate limiting globally.
