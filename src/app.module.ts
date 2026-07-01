@@ -12,6 +12,7 @@ import { validateEnv } from './config/env.validation';
 import { PrismaModule } from './database/prisma.module';
 import { QueueModule } from './queue/queue.module';
 import { HealthModule } from './modules/health/health.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -74,6 +75,7 @@ const isProd = process.env.NODE_ENV === 'production';
     PrismaModule,
     QueueModule,
     HealthModule,
+    AuthModule,
   ],
   providers: [
     // Apply rate limiting globally.
