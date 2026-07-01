@@ -13,6 +13,7 @@ import { PrismaModule } from './database/prisma.module';
 import { QueueModule } from './queue/queue.module';
 import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { EmailsModule } from './modules/emails/emails.module';
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -76,6 +77,7 @@ const isProd = process.env.NODE_ENV === 'production';
     QueueModule,
     HealthModule,
     AuthModule,
+    EmailsModule,
   ],
   providers: [
     // Apply rate limiting globally.
