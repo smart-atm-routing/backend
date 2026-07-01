@@ -4,9 +4,13 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUrl,
   Max,
   Min,
   MinLength,
+  Validate,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
   validateSync,
 } from 'class-validator';
 
@@ -14,6 +18,22 @@ export enum NodeEnv {
   Development = 'development',
   Production = 'production',
   Test = 'test',
+}
+
+/** Validates that a key decodes (base64 or hex) to exactly 32 bytes. */
+@ValidatorConstraint({ name: 'is32ByteKey', async: false })
+export class Is32ByteKeyConstraint implements ValidatorConstraintInterface {
+  validate(value: unknown): boolean {
+    if (typeof value !== 'string' || value.length === 0) return false;
+    const buf = /^[0-9a-fA-F]{64}$/.test(value)
+      ? Buffer.from(value, 'hex')
+      : Buffer.from(value, 'base64');
+    return buf.length === 32;
+  }
+
+  defaultMessage(): string {
+    return 'TOKEN_ENCRYPTION_KEY must decode (base64 or hex) to exactly 32 bytes';
+  }
 }
 
 /**
@@ -58,6 +78,31 @@ export class EnvironmentVariables {
   @IsInt()
   @Min(1)
   THROTTLE_LIMIT: number = 100;
+
+  // ----- Google OAuth (Gmail) -----
+
+  @IsString()
+  @MinLength(1)
+  GOOGLE_CLIENT_ID!: string;
+
+  @IsString()
+  @MinLength(1)
+  GOOGLE_CLIENT_SECRET!: string;
+
+  @IsUrl({ require_tld: false })
+  GOOGLE_REDIRECT_URI!: string;
+
+  @IsString()
+  @MinLength(1)
+  GOOGLE_SCOPES!: string;
+
+  // ----- Token encryption / frontend -----
+
+  @Validate(Is32ByteKeyConstraint)
+  TOKEN_ENCRYPTION_KEY!: string;
+
+  @IsUrl({ require_tld: false })
+  FRONTEND_DASHBOARD_URL!: string;
 }
 
 export function validateEnv(
